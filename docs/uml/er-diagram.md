@@ -42,7 +42,9 @@ erDiagram
         string title
         text description
         enum difficulty
+        int rating
         string[] tags
+        json testCases
         enum type
         timestamp createdAt
         uuid createdBy FK
@@ -74,6 +76,9 @@ erDiagram
         uuid teacherId FK
         string name
         string joinCode UK
+        string meetLink
+        string scheduleDays
+        string scheduleTime
         timestamp createdAt
     }
 

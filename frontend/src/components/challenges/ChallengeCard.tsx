@@ -27,9 +27,16 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge }) => {
         <h3 className="text-xl font-black text-gray-900 group-hover:text-orange-500 transition-colors leading-tight">
           {challenge.title}
         </h3>
-        <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border shadow-sm ${getDifficultyStyles(challenge.difficulty)}`}>
-          {challenge.difficulty}
-        </span>
+        <div className="flex flex-col items-end gap-1">
+          <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border shadow-sm ${getDifficultyStyles(challenge.difficulty)}`}>
+            {challenge.difficulty}
+          </span>
+          {challenge.rating && (
+            <span className="px-3 py-1 bg-purple-50 text-purple-700 border border-purple-200 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-sm">
+              Rt: {challenge.rating}
+            </span>
+          )}
+        </div>
       </div>
       <p className="text-gray-600 text-sm line-clamp-3 mb-8 font-medium leading-relaxed">
         {challenge.description}

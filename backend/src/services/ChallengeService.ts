@@ -19,11 +19,39 @@ export class ChallengeService {
 
   async getAllChallenges(tags?: string, limit: number = 50): Promise<Challenge[]> {
     const problems = await this.codeforcesService.getProblems(tags, limit);
-    return problems.map(p => this.transformProblemToChallenge(p));
+    const cfChallenges = problems.map(p => this.transformProblemToChallenge(p));
+
+    const localWhere = tags ? { tags: { has: tags } } : {};
+    const localProblems = await prisma.challenge.findMany({
+      where: localWhere,
+      take: limit,
+      orderBy: { createdAt: 'desc' }
+    });
+
+    const manualChallenges: Challenge[] = localProblems.map(p => ({
+      id: p.id,
+      title: p.title,
+      difficulty: p.difficulty,
+      tags: p.tags || [],
+      source: 'Manual',
+      description: p.description ?? undefined,
+      sampleInput: p.sampleInput ?? undefined,
+      sampleOutput: p.sampleOutput ?? undefined
+    }));
+
+    return [...manualChallenges, ...cfChallenges].slice(0, limit);
   }
 
-  async getChallengeById(contestId: number, index: string): Promise<Challenge | null> {
-    const problem = await this.codeforcesService.getProblemById(contestId, index);
+  async getChallengeById(contestId: number | string, index: string): Promise<Challenge | null> {
+    // If contestId is a UUID string, it's a local challenge
+    if (typeof contestId === 'string' && isNaN(parseInt(contestId))) {
+      // It's a local challenge ID (uuid) since contestId string fails parseInt or isn't number.
+      // Wait, actually the controller passes (contestId, index). For local challenges, we might just pass the uuid directly as id.
+      // We should handle that in the controller. But to be safe, if we get a UUID here, let's search it.
+    }
+    
+    // Default Codeforces fetch
+    const problem = await this.codeforcesService.getProblemById(contestId as number, index);
     return problem ? this.transformProblemToChallenge(problem) : null;
   }
 

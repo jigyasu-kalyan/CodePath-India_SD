@@ -14,6 +14,7 @@ import SolveProblem from './pages/SolveProblem';
 import Leaderboard from './pages/Leaderboard';
 import Profile from './pages/Profile';
 import Classroom from './pages/Classroom';
+import CreateChallenge from './pages/CreateChallenge';
 
 const App: React.FC = () => {
   return (
@@ -36,6 +37,7 @@ const App: React.FC = () => {
                 <Route path="/leaderboard" element={<Leaderboard />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/classroom" element={<Classroom />} />
+                <Route path="/create-challenge" element={<CreateChallenge />} />
               </Route>
 
               {/* Default Redirect */}

@@ -47,12 +47,37 @@ export class SubmissionService {
     challengeId: string,
     code: string,
     language: string,
-    expectedOutput: string
+    testCases: { input: string; output: string }[]
   ) {
-    const executionResult: TestResult = await this.executionStrategy.execute(code, language, '');
-    const status = this.getFinalStatus(executionResult, expectedOutput);
-    const verdict = this.getVerdictLabel(status);
-    const passed = status === SubmissionStatus.ACCEPTED;
+    if (!testCases || testCases.length === 0) {
+      testCases = [{ input: '', output: '' }];
+    }
+
+    let overallStatus = SubmissionStatus.ACCEPTED;
+    let overallVerdict = 'Accepted';
+    let maxRuntime = 0;
+    let maxMemory = 0;
+    let lastStdout = '';
+    let lastStderr = '';
+
+    for (const tc of testCases) {
+      const executionResult: TestResult = await this.executionStrategy.execute(code, language, tc.input);
+      const status = this.getFinalStatus(executionResult, tc.output);
+      
+      maxRuntime = Math.max(maxRuntime, executionResult.time || 0);
+      maxMemory = Math.max(maxMemory, executionResult.memory || 0);
+      lastStdout = executionResult.stdout;
+      lastStderr = executionResult.stderr;
+
+      if (status !== SubmissionStatus.ACCEPTED) {
+        overallStatus = status;
+        overallVerdict = this.getVerdictLabel(status);
+        break;
+      }
+    }
+
+    const passed = overallStatus === SubmissionStatus.ACCEPTED;
+    const alreadySolved = await this.hasSolvedChallenge(userId, challengeId);
 
     const submission = await prisma.submission.create({
       data: {
@@ -61,33 +86,34 @@ export class SubmissionService {
         code,
         language,
         score: passed ? 100 : 0,
-        status,
-        verdict,
-        runtime: executionResult.time,
-        memory: executionResult.memory,
-        output: executionResult.stdout,
-        error: executionResult.stderr,
+        status: overallStatus,
+        verdict: overallVerdict,
+        runtime: maxRuntime,
+        memory: maxMemory,
+        output: lastStdout,
+        error: lastStderr,
       },
     });
 
-    const event: SubmissionEvent = {
-      userId,
-      challengeId,
-      status,
-      runtime: executionResult.time,
-      memory: executionResult.memory,
-    };
-
-    await this.notifyObservers(event);
+    if (passed && !alreadySolved) {
+      const event: SubmissionEvent = {
+        userId,
+        challengeId,
+        status: overallStatus,
+        runtime: maxRuntime,
+        memory: maxMemory,
+      };
+      await this.notifyObservers(event);
+    }
 
     return {
       id: submission.id,
-      verdict,
-      status,
-      stdout: executionResult.stdout,
-      stderr: executionResult.stderr,
-      time: executionResult.time,
-      memory: executionResult.memory,
+      verdict: overallVerdict,
+      status: overallStatus,
+      stdout: lastStdout,
+      stderr: lastStderr,
+      time: maxRuntime,
+      memory: maxMemory,
       passed,
     };
   }
@@ -113,6 +139,58 @@ export class SubmissionService {
       where: { userId, challengeId, status: SubmissionStatus.ACCEPTED },
     });
     return !!submission;
+  }
+
+  async verifyCodeforces(userId: string, challengeId: string, handle: string) {
+    const [contestId, index] = challengeId.split('-');
+    const url = `https://codeforces.com/api/user.status?handle=${handle}&from=1&count=100`;
+    
+    try {
+      const axios = require('axios');
+      const res = await axios.get(url, { timeout: 10000 });
+      const submissions = res.data.result || [];
+      
+      const hasAccepted = submissions.some((sub: any) => 
+        sub.problem.contestId.toString() === contestId && 
+        sub.problem.index === index && 
+        sub.verdict === 'OK'
+      );
+
+      if (hasAccepted) {
+        const alreadySolved = await this.hasSolvedChallenge(userId, challengeId);
+        
+        // Create an accepted submission record
+        const submission = await prisma.submission.create({
+          data: {
+            userId,
+            challengeId,
+            code: '// Code verified via Codeforces',
+            language: 'codeforces',
+            score: 100,
+            status: SubmissionStatus.ACCEPTED,
+            verdict: 'Accepted',
+          },
+        });
+
+        if (!alreadySolved) {
+          const event: SubmissionEvent = {
+            userId,
+            challengeId,
+            status: SubmissionStatus.ACCEPTED,
+            runtime: 0,
+            memory: 0
+          };
+          await this.notifyObservers(event);
+        }
+
+        return { passed: true, status: 'ACCEPTED', id: submission.id };
+      }
+
+      return { passed: false, status: 'WRONG_ANSWER' };
+    } catch (e) {
+      console.error('Codeforces verify error', e);
+      return { passed: false, status: 'ERROR' };
+    }
   }
 
   private getFinalStatus(

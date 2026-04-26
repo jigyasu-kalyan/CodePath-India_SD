@@ -17,7 +17,9 @@ model User {
   submissions  Submission[]
   classrooms   ClassroomMember[]
   leaderboard  Leaderboard?
-  badges       Badge[]
+  badges             Badge[]
+  challenges         Challenge[]
+  teacherClassrooms  Classroom[]       @relation("TeacherClassrooms")
 }
 
 model Submission {
@@ -61,11 +63,16 @@ model Badge {
 }
 
 model Classroom {
-  id        String            @id @default(uuid())
-  name      String
-  joinCode  String            @unique
-  createdAt DateTime          @default(now())
-  members   ClassroomMember[]
+  id           String            @id @default(uuid())
+  name         String
+  joinCode     String            @unique
+  teacherId    String
+  teacher      User              @relation("TeacherClassrooms", fields: [teacherId], references: [id])
+  meetLink     String?
+  scheduleDays String?
+  scheduleTime String?
+  createdAt    DateTime          @default(now())
+  members      ClassroomMember[]
 }
 
 model ClassroomMember {
@@ -89,4 +96,19 @@ enum SubmissionStatus {
   TIME_LIMIT_EXCEEDED
   RUNTIME_ERROR
   COMPILATION_ERROR
+}
+
+model Challenge {
+  id          String   @id @default(uuid())
+  title       String
+  description String   @db.Text
+  difficulty  String   @default("MEDIUM")
+  rating      Int?
+  tags        String[]
+  sampleInput String   @db.Text
+  sampleOutput String  @db.Text
+  testCases   Json?
+  createdAt   DateTime @default(now())
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id])
 }

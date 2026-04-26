@@ -49,6 +49,7 @@ classDiagram
         +String id
         +String title
         +Difficulty difficulty
+        +number rating
         +List~String~ tags
         +String description
         +getDetails() ChallengeDTO
@@ -91,6 +92,9 @@ classDiagram
         +String teacherId
         +String name
         +String joinCode
+        +String meetLink
+        +String scheduleDays
+        +String scheduleTime
         +List~String~ studentIds
         +Date createdAt
         +enroll(studentId) void

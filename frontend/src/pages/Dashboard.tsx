@@ -112,6 +112,21 @@ const Dashboard: React.FC = () => {
           <h3 className="text-xl font-black text-gray-900">Classroom</h3>
           <p className="text-gray-600 mt-2 font-medium leading-relaxed">Join a classroom or manage your students easily.</p>
         </Link>
+
+        {(user?.role === 'TEACHER' || user?.role === 'ADMIN') && (
+          <Link
+            to="/create-challenge"
+            className="group bg-orange-50 p-8 rounded-2xl border border-orange-100 shadow-md hover:shadow-xl hover:border-orange-500 transition-all duration-300 transform hover:-translate-y-1"
+          >
+            <div className="w-14 h-14 bg-orange-500 rounded-xl flex items-center justify-center mb-6 group-hover:bg-orange-600 transition-colors">
+              <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-black text-gray-900">Create Challenge</h3>
+            <p className="text-gray-600 mt-2 font-medium leading-relaxed">Add custom problems for your students to solve.</p>
+          </Link>
+        )}
       </div>
     </div>
   );

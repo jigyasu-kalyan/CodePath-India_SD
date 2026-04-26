@@ -8,13 +8,16 @@ export interface User {
 }
 
 export interface Challenge {
-  id: number;
+  id: string | number;
   title: string;
-  difficulty: 'EASY' | 'MEDIUM' | 'HARD';
+  difficulty: string;
   tags: string[];
-  description: string;
-  sampleInput: string;
-  sampleOutput: string;
+  source: string;
+  description?: string;
+  rating?: number;
+  sampleInput?: string;
+  sampleOutput?: string;
+  testCases?: { input: string; output: string }[];
 }
 
 export interface Submission {
@@ -29,17 +32,20 @@ export interface Submission {
 
 export interface LeaderboardEntry {
   rank: number;
-  userId: number;
+  userId: string | number;
   name: string;
   score: number;
   badges: string[];
 }
 
 export interface Classroom {
-  id: number;
+  id: number | string;
   name: string;
   joinCode: string;
-  teacherId: number;
+  teacherId: number | string;
+  meetLink?: string;
+  scheduleDays?: string;
+  scheduleTime?: string;
   _count?: {
     students: number;
   };

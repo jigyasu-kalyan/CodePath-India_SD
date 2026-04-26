@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { submissionService } from '../services/submissionService';
+import api from '../services/api';
 import { Submission } from '../types';
 import LoadingSpinner from '../components/shared/LoadingSpinner';
 
@@ -9,19 +10,25 @@ const Profile: React.FC = () => {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const [badges, setBadges] = useState<any[]>([]);
+
   useEffect(() => {
-    const fetchSubmissions = async () => {
+    const fetchProfileData = async () => {
       try {
-        const data = await submissionService.getMySubmissions();
-        setSubmissions(data);
+        const [subData, badgeRes] = await Promise.all([
+          submissionService.getMySubmissions(),
+          api.get('/users/me/badges')
+        ]);
+        setSubmissions(subData);
+        setBadges(badgeRes.data.data || []);
       } catch (err) {
-        console.error('Failed to fetch submissions', err);
+        console.error('Failed to fetch profile data', err);
         setSubmissions([]);
       } finally {
         setLoading(false);
       }
     };
-    fetchSubmissions();
+    fetchProfileData();
   }, []);
 
   if (loading) return <LoadingSpinner />;
@@ -75,15 +82,15 @@ const Profile: React.FC = () => {
               Your Badges
             </h3>
             <div className="flex flex-wrap gap-3">
-              <span className="px-4 py-2 bg-orange-50 text-orange-600 rounded-xl border border-orange-100 text-xs font-black uppercase tracking-tight shadow-sm">
-                Alpha Tester
-              </span>
-              <span className="px-4 py-2 bg-green-50 text-green-600 rounded-xl border border-green-100 text-xs font-black uppercase tracking-tight shadow-sm">
-                Quick Solver
-              </span>
-              <span className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-xl border border-indigo-100 text-xs font-black uppercase tracking-tight shadow-sm">
-                Top 1%
-              </span>
+              {badges.length === 0 ? (
+                <p className="text-gray-400 text-sm font-medium italic">No badges earned yet. Keep solving!</p>
+              ) : (
+                badges.map((badge) => (
+                  <span key={badge.id} className="px-4 py-2 bg-orange-50 text-orange-600 rounded-xl border border-orange-100 text-xs font-black uppercase tracking-tight shadow-sm flex items-center gap-2">
+                    <span>{badge.icon}</span> {badge.name}
+                  </span>
+                ))
+              )}
             </div>
           </div>
         </div>
