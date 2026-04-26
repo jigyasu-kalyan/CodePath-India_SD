@@ -1,0 +1,61 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(STUDENT)
+  createdAt    DateTime @default(now())
+
+  submissions  Submission[]
+  classrooms   ClassroomMember[]
+}
+
+model Submission {
+  id        String           @id @default(uuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id])
+  code      String           @db.Text
+  language  String
+  status    SubmissionStatus @default(PENDING)
+  score     Int              @default(0)
+  createdAt DateTime         @default(now())
+}
+
+model Classroom {
+  id        String            @id @default(uuid())
+  name      String
+  joinCode  String            @unique
+  createdAt DateTime          @default(now())
+  members   ClassroomMember[]
+}
+
+model ClassroomMember {
+  id          String    @id @default(uuid())
+  userId      String
+  classroomId String
+  user        User      @relation(fields: [userId], references: [id])
+  classroom   Classroom @relation(fields: [classroomId], references: [id])
+}
+
+enum Role {
+  STUDENT
+  TEACHER
+  ADMIN
+}
+
+enum SubmissionStatus {
+  PENDING
+  ACCEPTED
+  WRONG_ANSWER
+  TIME_LIMIT_EXCEEDED
+  RUNTIME_ERROR
+  COMPILATION_ERROR
+}
