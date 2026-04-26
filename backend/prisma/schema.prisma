@@ -16,17 +16,48 @@ model User {
 
   submissions  Submission[]
   classrooms   ClassroomMember[]
+  leaderboard  Leaderboard?
+  badges       Badge[]
 }
 
 model Submission {
   id        String           @id @default(uuid())
   userId    String
   user      User             @relation(fields: [userId], references: [id])
+  challengeId String
   code      String           @db.Text
   language  String
   status    SubmissionStatus @default(PENDING)
+  verdict   String
+  runtime   Float?
+  memory    Int?
+  output    String?          @db.Text
+  error     String?          @db.Text
   score     Int              @default(0)
   createdAt DateTime         @default(now())
+
+  @@index([userId, challengeId])
+}
+
+model Leaderboard {
+  id             String   @id @default(uuid())
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id])
+  totalScore     Int      @default(0)
+  problemsSolved Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Badge {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  name      String
+  icon      String
+  awardedAt DateTime @default(now())
+
+  @@unique([userId, name])
 }
 
 model Classroom {

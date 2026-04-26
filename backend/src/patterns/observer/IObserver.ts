@@ -1,8 +1,8 @@
 // Observer Pattern — notify services after submission verdict
 export interface SubmissionEvent {
-  studentId: string;
+  userId: string;
   challengeId: string;
-  verdict: string;
+  status: string;
   runtime: number;
   memory: number;
 }
